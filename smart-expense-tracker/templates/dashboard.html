@@ -1,0 +1,37 @@
+{% extends "base.html" %}{% block content %}
+<form class="row g-2 mb-4" method="get">
+  <div class="col-auto"><select class="form-select" name="range" onchange="this.form.submit()">
+    {% for k, l in [('this_month','This month'),('last_month','Last month'),('last_3_months','Last 3 months'),('this_year','This year'),('custom','Custom')] %}
+    <option value="{{ k }}" {{ 'selected' if key == k }}>{{ l }}</option>{% endfor %}</select></div>
+  {% if key == 'custom' %}
+  <div class="col-auto"><input class="form-control" type="date" name="start" value="{{ start }}"></div>
+  <div class="col-auto"><input class="form-control" type="date" name="end" value="{{ end }}"></div>
+  <div class="col-auto"><button class="btn btn-secondary">Apply</button></div>{% endif %}
+  <div class="col text-end"><a class="btn btn-primary" href="{{ url_for('main.transaction_form') }}">+ Add Transaction</a></div>
+</form>
+<div class="row g-3 mb-4">
+  <div class="col-md-3"><div class="card p-3"><small>Total Income</small><h4 class="text-success">₹{{ '%.2f'|format(s.income) }}</h4></div></div>
+  <div class="col-md-3"><div class="card p-3"><small>Total Expenses</small><h4 class="text-danger">₹{{ '%.2f'|format(s.expense) }}</h4></div></div>
+  <div class="col-md-3"><div class="card p-3"><small>Net Savings</small><h4>₹{{ '%.2f'|format(s.savings) }}</h4>
+    <small class="text-muted">Savings rate: {{ s.savings_rate ~ '%' if s.savings_rate is not none else 'N/A (no income)' }}</small></div></div>
+  <div class="col-md-3"><div class="card p-3"><small>Avg daily spend</small><h4>₹{{ s.avg_daily_spend }}</h4>
+    <small class="text-muted">{{ s.count }} transactions</small></div></div>
+</div>
+{% if s.count == 0 %}
+<div class="card p-4 text-center text-muted">No transactions in this period yet. Add one to see your charts.</div>
+{% else %}
+<div class="row g-3">
+  <div class="col-md-5"><div class="card p-3"><h6>Spending by category</h6>
+    {% if cats %}<canvas id="pie"></canvas>{% else %}<p class="text-muted">No expenses in this period.</p>{% endif %}</div></div>
+  <div class="col-md-7"><div class="card p-3"><h6>Recent transactions</h6>
+    <table class="table table-sm">{% for t in recent %}<tr><td>{{ t.transaction_date }}</td><td>{{ t.category }}</td>
+      <td class="text-end {{ 'text-success' if t.transaction_type == 'income' else 'text-danger' }}">₹{{ t.amount }}</td></tr>{% endfor %}</table>
+    {% if top %}<small class="text-muted">Highest spending category: {{ top[0] }} (₹{{ '%.2f'|format(top[1]) }})</small>{% endif %}</div></div>
+</div>
+{% endif %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3"></script>
+<script>
+const data = {{ cats|tojson }};
+if (data.length) new Chart(document.getElementById('pie'), {type: 'pie',
+  data: {labels: data.map(d => d[0]), datasets: [{data: data.map(d => d[1])}]}});
+</script>{% endblock %}

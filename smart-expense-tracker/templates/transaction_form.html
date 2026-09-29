@@ -1,0 +1,18 @@
+{% extends "base.html" %}{% block content %}
+<div class="card p-4 mx-auto" style="max-width:520px"><h4>{{ 'Edit' if tx else 'Add' }} Transaction</h4>
+<form method="post"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+<select class="form-select mb-2" name="transaction_type" id="type" onchange="fill()">
+  {% for t in ['expense','income'] %}<option value="{{ t }}" {{ 'selected' if tx and tx.transaction_type == t }}>{{ t|capitalize }}</option>{% endfor %}</select>
+<select class="form-select mb-2" name="category" id="cat"></select>
+<input class="form-control mb-2" name="amount" type="number" step="0.01" min="0.01" placeholder="Amount (₹)" value="{{ tx.amount if tx }}" required>
+<input class="form-control mb-2" name="transaction_date" type="date" value="{{ tx.transaction_date if tx }}" required>
+<select class="form-select mb-2" name="payment_method">{% for m in ['Cash','UPI','Card','Bank Transfer'] %}
+  <option {{ 'selected' if tx and tx.payment_method == m }}>{{ m }}</option>{% endfor %}</select>
+<input class="form-control mb-3" name="description" maxlength="200" placeholder="Description" value="{{ tx.description if tx }}">
+<button class="btn btn-primary">Save</button> <a class="btn btn-link" href="{{ url_for('main.transactions') }}">Cancel</a></form></div>
+<script>
+const cats = {{ cats|tojson }}, current = {{ (tx.category if tx else '')|tojson }};
+function fill() { const t = document.getElementById('type').value, sel = document.getElementById('cat');
+  sel.innerHTML = cats[t].map(c => `<option ${c === current ? 'selected' : ''}>${c}</option>`).join(''); }
+fill();
+</script>{% endblock %}
